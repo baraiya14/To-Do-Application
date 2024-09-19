@@ -1,0 +1,910 @@
+* To-do Application
+____________________________________________________________________
+
+1) Connection Factory File :- 
+
+package com.ConnectionFactory;
+
+import java.sql.Connection;
+
+import com.mysql.cj.jdbc.MysqlDataSource;
+
+public class ConnectionFactory {
+	
+	public static Connection con;
+	
+	public static Connection getCon()
+	{
+		try
+		{
+			MysqlDataSource ds =new MysqlDataSource();
+			ds.setUrl("jdbc:mysql://localhost:3306/app");
+			ds.setUser("root");
+			ds.setPassword("");
+			
+			con=ds.getConnection();
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
+		finally {
+			return con;
+		}
+	}
+
+}
+ 
+2) Com.Controller Files 
+
+	=> Launch 1
+		
+
+	package com.Controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ConnectionFactory.ConnectionFactory;
+import com.Dao.UserDao;
+@WebServlet("/signup")
+public class Launch1 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
+		String name = req.getParameter("uname");
+		String pass = req.getParameter("upass");
+		String email = req.getParameter("uemail");
+		String dob = req.getParameter("udob");
+		
+		
+		Connection con = ConnectionFactory.getCon();
+		UserDao uDao = new UserDao();
+		
+		String res=uDao.sigupUser(name, pass, email, dob, con);
+		
+		HttpSession s = req.getSession();
+		if(res.equals("inserted"))
+		{
+			s.setAttribute("msg", "Account created Successfuly");
+			resp.sendRedirect("login.jsp");
+		}
+		else
+		{
+			s.setAttribute("msg", "Failed");
+			resp.sendRedirect("signup.jsp");
+		}
+	}
+
+}
+
+
+=> Launch 2
+
+package com.Controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.util.ArrayList;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ConnectionFactory.ConnectionFactory;
+import com.Dao.UserDao;
+import com.Entity.UserData;
+@WebServlet("/login")
+public class Launch2 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
+		String name = req.getParameter("uname");
+		String pass = req.getParameter("upass");
+		
+		
+		
+		Connection con = ConnectionFactory.getCon();
+		UserDao uDao = new UserDao();
+		
+		String res=uDao.loginUser(name, pass, con);
+		
+		ArrayList<UserData> al=uDao.getNotes(name, con);
+		
+		HttpSession s = req.getSession();
+		if(res.equals("exists"))
+		{
+			s.setAttribute("notes", al);
+			s.setAttribute("check", name);
+			resp.sendRedirect("home.jsp");
+		}
+		else
+		{
+			s.setAttribute("msg", "Failed");
+			resp.sendRedirect("login.jsp");
+		}
+	}
+
+
+=> Launch 3
+
+package com.Controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ConnectionFactory.ConnectionFactory;
+import com.Dao.UserDao;
+@WebServlet("/logout")
+public class Launch3 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
+		
+		
+		
+		HttpSession s = req.getSession();
+		s.removeAttribute("check");
+		s.removeAttribute("msg");
+		resp.sendRedirect("login.jsp");
+		
+	}
+
+}
+
+
+Launch 4 :- 
+
+package com.Controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.util.ArrayList;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ConnectionFactory.ConnectionFactory;
+import com.Dao.UserDao;
+import com.Entity.UserData;
+@WebServlet("/addnote")
+public class Launch4 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
+		
+		String note = req.getParameter("note");
+		String name = req.getParameter("uname");
+		
+		
+		Connection con = ConnectionFactory.getCon();
+		UserDao uDao = new UserDao();
+		
+		uDao.addNote(name, note, con);
+		
+		
+		ArrayList<UserData> al = uDao.getNotes(name, con);
+		HttpSession s = req.getSession();
+		
+		s.setAttribute("notes", al);
+		resp.sendRedirect("home.jsp");
+		
+	}
+
+}
+
+LAUNCH 5 :- 
+
+package com.Controller;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.util.ArrayList;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ConnectionFactory.ConnectionFactory;
+import com.Dao.UserDao;
+import com.Entity.UserData;
+@WebServlet("/deletenote")
+public class Launch5 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		
+		
+		String note = req.getParameter("note");
+		String name = req.getParameter("name");
+		
+		
+		Connection con = ConnectionFactory.getCon();
+		UserDao uDao = new UserDao();
+		
+		
+		uDao.deleteNote(note, name, con);
+		
+		ArrayList<UserData> al = uDao.getNotes(name, con);
+		HttpSession s = req.getSession();
+		
+		s.setAttribute("notes", al);
+		s.setAttribute("check", name);
+		resp.sendRedirect("home.jsp");
+		
+	}
+
+}
+
+
+LAUNCH 6 => 
+
+package com.Controller;
+
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+@WebServlet("/updatenote")
+public class Launch6 extends HttpServlet {
+	
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String name = req.getParameter("uname");
+		String note = req.getParameter("note");
+		String oname = req.getParameter("oldnote");
+		
+		System.out.println(name);
+		System.out.println(note);
+		System.out.println(oname);
+		
+	}
+
+}
+
+
+3) com.Dao
+
+==> UserDao.Java
+
+package com.Dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.util.ArrayList;
+
+import com.Entity.UserData;
+
+public class UserDao {
+	
+	
+	String result = "";
+
+	public String sigupUser(String name, String pass,String email, String dob, Connection con) {
+		try {
+			String sql = "insert into users values(?,?,?,?)";
+
+			PreparedStatement ps = con.prepareStatement(sql);
+
+			ps.setString(1, name);
+			ps.setString(2, pass);
+			ps.setString(3, email);
+			ps.setString(4, dob);
+			
+			int row = ps.executeUpdate();
+			if (row == 1) {
+				result = "inserted";
+				
+				String sql1 = "create table "+name+"Data(note varchar(255), AddDate varchar(255), MDate varchar(255))";
+				
+				con.prepareStatement(sql1).execute();
+				
+			} else {
+				result = "failed";
+			}
+
+		} catch (Exception e) {
+			result = "failed";
+			System.out.println(e);
+		} finally {
+			return result;
+		}
+	}
+	
+	public String loginUser(String name, String pass, Connection con)
+	{
+		try
+		{
+			String sql="select * from users where username=? and password=?";
+			
+			PreparedStatement ps = con.prepareStatement(sql);
+			
+			ps.setString(1, name);
+			ps.setString(2, pass);
+			
+			ResultSet rs = ps.executeQuery();
+			int count=0;
+			while(rs.next())
+			{
+				count++;
+			}
+			if(count==1)
+			{
+				result="exists";
+			}
+			else
+			{
+				result="not exists";
+			}
+			
+		}
+		catch (Exception e) {
+			result="not exists";
+			System.out.println(e);
+		}
+		finally {
+			return result;
+		}
+	}
+	
+	
+	public String addNote(String name, String note, Connection con) {
+		try {
+			String sql = "insert into "+name+"Data values(?,?,?)";
+
+			PreparedStatement ps = con.prepareStatement(sql);
+			
+			String date=LocalDate.now().toString();
+			ps.setString(1, note);
+			ps.setString(2, date);
+			ps.setString(3, "not updated");
+			
+			
+			int row = ps.executeUpdate();
+			if (row == 1) {
+				result = "inserted";
+				
+				
+			} else {
+				result = "failed";
+			}
+
+		} catch (Exception e) {
+			result = "failed";
+			System.out.println(e);
+		} finally {
+			return result;
+		}
+	}
+
+	
+	public ArrayList<UserData> getNotes(String name, Connection con)
+	{
+		ArrayList<UserData> al = new ArrayList<UserData>();
+		try
+		{
+			String sql = "select * from "+name+"Data";
+			PreparedStatement ps = con.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+			while(rs.next())
+			{
+				UserData u = new UserData();
+				u.setNote(rs.getString(1));
+				u.setAddDate(rs.getString(2));
+				u.setmDate(rs.getString(3));
+				
+				al.add(u);
+			}
+		}
+		catch (Exception e) {
+			System.out.println(e);
+		}
+		finally {
+			return al;
+		}
+	}
+	
+	
+	public void deleteNote(String note, String name, Connection con)
+	{
+		try
+		{
+			String sql = "delete from "+name+"Data where note=?";
+			PreparedStatement ps = con.prepareStatement(sql);
+			ps.setString(1, note);
+			ps.executeUpdate();
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
+	}	
+}
+
+
+4) com.Entity 
+
+==> UserData.java
+
+package com.Entity;
+
+public class UserData {
+
+	String note;
+	String addDate;
+	String mDate;
+	public String getNote() {
+		return note;
+	}
+	public void setNote(String note) {
+		this.note = note;
+	}
+	public String getAddDate() {
+		return addDate;
+	}
+	public void setAddDate(String addDate) {
+		this.addDate = addDate;
+	}
+	public String getmDate() {
+		return mDate;
+	}
+	public void setmDate(String mDate) {
+		this.mDate = mDate;
+	}
+	
+	
+}
+
+
+5) WEB-INF Files
+
+	==>  addnote.jsp
+	
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<style type="text/css">
+.popup{
+display: none;
+position: fixed;
+z-index: 1;
+left: 0px;
+right: 0px;
+top:100px;
+width: 100%;
+height: 100%;
+}
+
+.popup-content{
+margin: 20px auto;
+width: 50%;
+background-color: #EAECEE ;
+}
+
+.close{
+float: right;
+font-size: 35px;
+}
+</style>
+
+</head>
+<body>
+
+<%
+String check1=(String)session.getAttribute("check");
+if(check1!=null)
+{
+	
+%>
+<button class="btn btn-info" onclick="openform()">Add</button>
+
+<div class="popup" id="popupform">
+<div class="popup-content">
+
+<h1 class="display-6 text-center" >Add Note</h1>
+<span class="close text-white btn btn-outline-danger" onclick="closeform()">&times;</span>
+
+<form action="addnote" method="post">
+<input type="hidden" name="uname" value="<%=check1%>">
+<label class="form-label">Write Note</label>
+<textarea rows="10" cols="30" name="note" class="form-control"></textarea>
+<button class="btn btn-info">Submit</button>
+</form>
+
+</div>
+</div>
+
+<%} 
+else
+{
+	response.sendRedirect("login.html");
+}
+%>
+
+<script type="text/javascript">
+
+function openform()
+{
+	document.getElementById("popupform").style.display="Block";
+}
+function closeform()
+{
+	document.getElementById("popupform").style.display="none";
+}
+</script>
+</body>
+</html>
+
+
+==> home.jsp 
+<%@page import="com.Entity.UserData"%>
+<%@page import="java.util.ArrayList"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<style type="text/css">
+.pdate{
+font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<%
+String check=(String)session.getAttribute("check");
+ArrayList<UserData> al=(ArrayList<UserData>) session.getAttribute("notes");
+if(check!=null)
+{
+	
+
+%>
+<h1 class="display-6 text-center">DashBoard</h1>
+<h3 class="display-4">welcome <%=check %></h3>
+<a class="btn btn-danger" href="logout">logout</a>
+<%@ include file="addnote.jsp" %>
+
+<!-- read -->
+<%
+if(al!=null)
+{
+%>
+
+<%
+for(UserData note:al)
+{
+%>
+<div class="container border w-50">
+<p>
+Note: <%=note.getNote() %>
+</p>
+<p class="pdate">
+Add Date: <%=note.getAddDate() %>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Last Update: <%=note.getmDate() %>
+
+</p>
+<form action="deletenote" method="post">
+<input type="hidden" name="note" value="<%=note.getNote()%>">
+<input type="hidden" name="name" value="<%=check%>">
+<button class="btn btn-danger btn-sm">Delete</button>
+</form>
+<%@ include file="updatenote.jsp" %>
+</div>
+<br>
+<%}
+}
+else
+{
+%>
+<h1 class="text-center text-danger">please Add notes</h1>
+<%} %>
+
+
+
+
+<%} 
+else
+{
+	response.sendRedirect("login.jsp");
+}
+%>
+
+</body>
+</html>
+
+
+==> login.jsp 
+
+<%@page import="com.Entity.UserData"%>
+<%@page import="java.util.ArrayList"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<style type="text/css">
+.pdate{
+font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<%
+String check=(String)session.getAttribute("check");
+ArrayList<UserData> al=(ArrayList<UserData>) session.getAttribute("notes");
+if(check!=null)
+{
+	
+
+%>
+<h1 class="display-6 text-center">DashBoard</h1>
+<h3 class="display-4">welcome <%=check %></h3>
+<a class="btn btn-danger" href="logout">logout</a>
+<%@ include file="addnote.jsp" %>
+
+<!-- read -->
+<%
+if(al!=null)
+{
+%>
+
+<%
+for(UserData note:al)
+{
+%>
+<div class="container border w-50">
+<p>
+Note: <%=note.getNote() %>
+</p>
+<p class="pdate">
+Add Date: <%=note.getAddDate() %>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Last Update: <%=note.getmDate() %>
+
+</p>
+<form action="deletenote" method="post">
+<input type="hidden" name="note" value="<%=note.getNote()%>">
+<input type="hidden" name="name" value="<%=check%>">
+<button class="btn btn-danger btn-sm">Delete</button>
+</form>
+<%@ include file="updatenote.jsp" %>
+</div>
+<br>
+<%}
+}
+else
+{
+%>
+<h1 class="text-center text-danger">please Add notes</h1>
+<%} %>
+
+
+
+
+<%} 
+else
+{
+	response.sendRedirect("login.jsp");
+}
+%>
+
+</body>
+</html>
+
+==> msg.jsp
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+
+<%
+String msg=(String)session.getAttribute("msg");
+if(msg!=null)
+{
+	
+
+%>
+<h1 class="display-6 text-danger"><%=msg %></h1>
+<%} 
+else
+{
+	session.removeAttribute("msg");
+}
+%>
+</body>
+</html>
+
+==> signup.jsp
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+
+<h1 class="display-6 text-center">SignUp</h1>
+<a class="btn btn-danger" href="login.jsp">Login</a>
+
+<!-- msg  -->
+<%@ include file="msg.jsp" %>
+<div class="container w-75">
+<form action="signup">
+
+<label class="form-label">Enter UserName</label>
+<input type="text" name="uname" class="form-control">
+
+<label class="form-label">Enter Password</label>
+<input type="password" name="upass" class="form-control">
+
+<label class="form-label">Enter Email</label>
+<input type="email" name="uemail" class="form-control">
+
+<label class="form-label">Enter DOB</label>
+<input type="date" name="udob" class="form-control">
+
+<button class="btn btn-success mt-4">SignUp</button>
+</form>
+</div>
+
+</body>
+</html>
+
+==> updatenote.jsp
+
+<%@page import="java.util.ArrayList"%>
+<%@page import="com.Entity.UserData"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<style type="text/css">
+.popup{
+display: none;
+position: fixed;
+z-index: 1;
+left: 0px;
+right: 0px;
+top:100px;
+width: 100%;
+height: 100%;
+}
+
+.popup-content{
+margin: 20px auto;
+width: 50%;
+background-color: #EAECEE ;
+}
+
+.close{
+float: right;
+font-size: 35px;
+}
+</style>
+
+</head>
+<body>
+
+
+<%
+String check2=(String)session.getAttribute("check");
+ArrayList<UserData> al1=(ArrayList<UserData>) session.getAttribute("notes");
+if(check2!=null)
+{
+	
+	
+	
+%>
+
+<button class="btn btn-info btn-sm" onclick="openform1()">Update</button>
+
+
+<div class="popup" id="popupform1">
+<div class="popup-content">
+
+<h1 class="display-6 text-center">Update Note</h1>
+<span class="close text-white btn btn-outline-danger" onclick="closeform1()">&times;</span>
+
+<form action="updatenote" method="post">
+<input type="hidden" name="uname" value="<%=check2%>">
+<label class="form-label">Write Note</label>
+<textarea rows="10" cols="30" name="note" class="form-control"></textarea>
+
+<button class="btn btn-info">Submit</button>
+</form>
+
+</div>
+</div>
+
+<%} 
+else
+{
+	response.sendRedirect("login.html");
+}
+%>
+
+
+
+
+
+<script type="text/javascript">
+
+function openform1()
+{
+	document.getElementById("popupform1").style.display="Block";
+}
+function closeform1()
+{
+	document.getElementById("popupform1").style.display="none";
+}
+</script>
+</body>
+</html>
+		
